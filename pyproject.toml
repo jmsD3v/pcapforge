@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pcapforge"
+version = "0.1.0"
+description = "F-03 — PCAPForge: network forensics investigator with AI analysis"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.0",
+    "jinja2>=3.1",
+    "python-dotenv>=1.0",
+    "google-generativeai>=0.7",
+    "scapy>=2.5.0",
+    "dpkt>=1.9.8",
+]
+
+[project.scripts]
+pcapforge = "pcapforge.cli.main:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pcapforge*"]

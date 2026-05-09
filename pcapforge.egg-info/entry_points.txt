@@ -1,0 +1,2 @@
+[console_scripts]
+pcapforge = pcapforge.cli.main:app

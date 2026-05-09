@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PCAPForge Report — {{ summary.pcap_path.name }}</title>
+<style>
+  :root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--red:#f85149;--orange:#d29922;--yellow:#e3b341;--cyan:#58a6ff;--green:#3fb950;--purple:#bc8cff;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+  .page{max-width:1200px;margin:0 auto;padding:32px 24px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:20px;margin-bottom:28px;}
+  .header h1{font-size:22px;font-weight:700;color:var(--cyan);}
+  .meta{text-align:right;color:var(--muted);font-size:12px;line-height:1.7;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-bottom:28px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;text-align:center;}
+  .card .num{font-size:26px;font-weight:700;line-height:1;margin-bottom:4px;}
+  .card .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+  .card.critical .num{color:var(--red);}
+  .card.high .num{color:var(--orange);}
+  .card.medium .num{color:var(--yellow);}
+  .card.neutral .num{color:var(--cyan);}
+  h2{font-size:15px;font-weight:600;color:var(--cyan);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:16px;margin-top:28px;}
+  .ai-box{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;padding:16px 20px;font-size:13px;line-height:1.7;margin-bottom:16px;white-space:pre-wrap;}
+  .kill-chain{display:flex;gap:0;margin-bottom:20px;flex-wrap:wrap;}
+  .kc-step{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:8px 14px;font-size:12px;margin:4px;position:relative;}
+  .kc-step::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--muted);}
+  .kc-step:last-child::after{display:none;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid var(--border);}
+  td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tr:hover td{background:var(--surface);}
+  .sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;}
+  .sev-critical{background:rgba(248,81,73,.15);color:var(--red);border:1px solid var(--red);}
+  .sev-high{background:rgba(210,153,34,.15);color:var(--orange);border:1px solid var(--orange);}
+  .sev-medium{background:rgba(227,179,65,.15);color:var(--yellow);border:1px solid var(--yellow);}
+  .sev-low{background:rgba(88,166,255,.15);color:var(--cyan);border:1px solid var(--cyan);}
+  .sev-info{background:rgba(139,148,158,.1);color:var(--muted);border:1px solid var(--border);}
+  .mitre{display:inline-block;background:rgba(188,140,255,.1);color:var(--purple);border:1px solid rgba(188,140,255,.3);border-radius:3px;font-size:10px;padding:1px 6px;margin:1px 2px;}
+  .tag{display:inline-block;background:rgba(48,54,61,.8);color:var(--muted);border-radius:3px;font-size:10px;padding:1px 5px;margin:1px;}
+  .ioc-list{font-family:monospace;font-size:11px;color:var(--cyan);list-style:none;}
+  .ioc-list li{padding:3px 0;border-bottom:1px solid var(--border);}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:20px;}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 14px;}
+  .stat .k{font-size:10px;text-transform:uppercase;color:var(--muted);}
+  .stat .v{font-size:14px;font-weight:600;margin-top:2px;}
+  .footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--border);text-align:center;font-size:11px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>PCAPForge — Network Forensics Report</h1>
+      <div style="margin-top:6px;color:var(--muted);font-size:13px;">{{ summary.pcap_path.name }}</div>
+    </div>
+    <div class="meta">
+      <div>Generated: {{ generated_at }}</div>
+      <div>Analysis: {{ summary.duration_seconds|round(2) }}s</div>
+      <div>PCAPForge v{{ version }}</div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card critical"><div class="num">{{ s.critical }}</div><div class="label">Critical</div></div>
+    <div class="card high"><div class="num">{{ s.high }}</div><div class="label">High</div></div>
+    <div class="card medium"><div class="num">{{ s.medium }}</div><div class="label">Medium</div></div>
+    <div class="card neutral"><div class="num">{{ s.total_findings }}</div><div class="label">Findings</div></div>
+    <div class="card neutral"><div class="num">{{ s.total_flows }}</div><div class="label">Flows</div></div>
+    <div class="card neutral"><div class="num">{{ s.dns_queries }}</div><div class="label">DNS Queries</div></div>
+    <div class="card neutral"><div class="num">{{ s.http_requests }}</div><div class="label">HTTP Reqs</div></div>
+    <div class="card neutral"><div class="num">{{ s.unique_iocs }}</div><div class="label">IOCs</div></div>
+  </div>
+
+  <h2>Capture Statistics</h2>
+  <div class="stat-grid">
+    <div class="stat"><div class="k">Packets</div><div class="v">{{ stats.total_packets | filesizeformat(True) }}</div></div>
+    <div class="stat"><div class="k">Data</div><div class="v">{{ stats.total_bytes | filesizeformat }}</div></div>
+    <div class="stat"><div class="k">Duration</div><div class="v">{{ stats.duration_seconds|round(1) }}s</div></div>
+    <div class="stat"><div class="k">Unique Src IPs</div><div class="v">{{ stats.unique_src_ips }}</div></div>
+    <div class="stat"><div class="k">Unique Dst IPs</div><div class="v">{{ stats.unique_dst_ips }}</div></div>
+    <div class="stat"><div class="k">Unique Ports</div><div class="v">{{ stats.unique_dst_ports }}</div></div>
+  </div>
+
+  {% if summary.ai_narrative %}
+  <h2>AI Incident Narrative</h2>
+  <div class="ai-box">{{ summary.ai_narrative }}</div>
+  {% if summary.ai_threat_actor %}
+  <p style="font-size:12px;color:var(--muted);margin-bottom:12px;"><strong style="color:var(--text);">Threat Actor:</strong> {{ summary.ai_threat_actor }}</p>
+  {% endif %}
+  {% if summary.ai_kill_chain %}
+  <div class="kill-chain">
+    {% for step in summary.ai_kill_chain %}<div class="kc-step">{{ step }}</div>{% endfor %}
+  </div>
+  {% endif %}
+  {% if summary.ai_mitre %}
+  <div style="margin-bottom:20px;">
+    {% for t in summary.ai_mitre %}<span class="mitre">{{ t }}</span>{% endfor %}
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <h2>Forensic Findings ({{ summary.findings|length }})</h2>
+  <table>
+    <thead><tr>
+      <th>Severity</th><th>Category</th><th>Title</th><th>Description</th><th>MITRE</th><th>Tags</th>
+    </tr></thead>
+    <tbody>
+    {% for f in summary.sorted_findings() %}
+    <tr>
+      <td><span class="sev sev-{{ f.severity.value }}">{{ f.severity.value }}</span></td>
+      <td style="color:var(--muted);">{{ f.category }}</td>
+      <td style="font-weight:600;font-size:12px;">{{ f.title[:50] }}</td>
+      <td style="font-size:12px;">{{ f.description[:120] }}</td>
+      <td>{% for t in f.mitre_techniques[:2] %}<span class="mitre">{{ t }}</span>{% endfor %}</td>
+      <td>{% for t in f.tags[:3] %}<span class="tag">{{ t }}</span>{% endfor %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% if summary.flows %}
+  <h2>Top Flows ({{ summary.flows|length }} total)</h2>
+  <table>
+    <thead><tr><th>Src IP</th><th>Dst IP</th><th>Port</th><th>Protocol</th><th>Packets</th><th>Bytes</th><th>Duration</th></tr></thead>
+    <tbody>
+    {% for fl in summary.flows | sort(attribute='total_bytes', reverse=True) | list | first_n(20) %}
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">{{ fl.src_ip }}</td>
+      <td style="font-family:monospace;font-size:11px;">{{ fl.dst_ip }}</td>
+      <td style="color:var(--muted);">{{ fl.dst_port }}</td>
+      <td><span class="tag">{{ fl.protocol.value }}</span></td>
+      <td style="color:var(--muted);">{{ fl.packets }}</td>
+      <td style="color:var(--muted);">{{ fl.total_bytes }}</td>
+      <td style="color:var(--muted);">{{ fl.duration_seconds }}s</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if summary.dns_queries %}
+  <h2>Suspicious DNS Queries</h2>
+  <table>
+    <thead><tr><th>Src IP</th><th>Query</th><th>Type</th><th>Responses</th><th>Reason</th></tr></thead>
+    <tbody>
+    {% for q in summary.dns_queries if q.is_suspicious %}
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">{{ q.src_ip }}</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--orange);">{{ q.query_name[:60] }}</td>
+      <td style="color:var(--muted);">{{ q.query_type }}</td>
+      <td style="font-family:monospace;font-size:11px;">{{ q.response_ips[:3]|join(', ') }}</td>
+      <td style="font-size:11px;color:var(--muted);">{{ q.suspicion_reason }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% set all_iocs = namespace(items=[]) %}
+  {% for f in summary.findings %}
+    {% for ioc in f.iocs %}
+      {% if ioc not in all_iocs.items %}
+        {% set all_iocs.items = all_iocs.items + [ioc] %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+  {% if all_iocs.items %}
+  <h2>IOC List ({{ all_iocs.items|length }})</h2>
+  <ul class="ioc-list">
+    {% for ioc in all_iocs.items[:40] %}<li>{{ ioc }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  <div class="footer">
+    PCAPForge v{{ version }} &bull; Powered by Gemini AI &bull;
+    Copyright &copy; 2025 Desarrollado desde Las Brenas con amor por @jmsDev All rights reserved
+  </div>
+</div>
+</body>
+</html>

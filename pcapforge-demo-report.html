@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PCAPForge Report — synthetic_attack_demo.pcap</title>
+<style>
+  :root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--red:#f85149;--orange:#d29922;--yellow:#e3b341;--cyan:#58a6ff;--green:#3fb950;--purple:#bc8cff;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+  .page{max-width:1200px;margin:0 auto;padding:32px 24px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:20px;margin-bottom:28px;}
+  .header h1{font-size:22px;font-weight:700;color:var(--cyan);}
+  .meta{text-align:right;color:var(--muted);font-size:12px;line-height:1.7;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-bottom:28px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;text-align:center;}
+  .card .num{font-size:26px;font-weight:700;line-height:1;margin-bottom:4px;}
+  .card .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+  .card.critical .num{color:var(--red);}
+  .card.high .num{color:var(--orange);}
+  .card.medium .num{color:var(--yellow);}
+  .card.neutral .num{color:var(--cyan);}
+  h2{font-size:15px;font-weight:600;color:var(--cyan);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:16px;margin-top:28px;}
+  .ai-box{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--purple);border-radius:0 8px 8px 0;padding:16px 20px;font-size:13px;line-height:1.7;margin-bottom:16px;white-space:pre-wrap;}
+  .kill-chain{display:flex;gap:0;margin-bottom:20px;flex-wrap:wrap;}
+  .kc-step{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:8px 14px;font-size:12px;margin:4px;position:relative;}
+  .kc-step::after{content:'→';position:absolute;right:-12px;top:50%;transform:translateY(-50%);color:var(--muted);}
+  .kc-step:last-child::after{display:none;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-bottom:1px solid var(--border);}
+  td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tr:hover td{background:var(--surface);}
+  .sev{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;}
+  .sev-critical{background:rgba(248,81,73,.15);color:var(--red);border:1px solid var(--red);}
+  .sev-high{background:rgba(210,153,34,.15);color:var(--orange);border:1px solid var(--orange);}
+  .sev-medium{background:rgba(227,179,65,.15);color:var(--yellow);border:1px solid var(--yellow);}
+  .sev-low{background:rgba(88,166,255,.15);color:var(--cyan);border:1px solid var(--cyan);}
+  .sev-info{background:rgba(139,148,158,.1);color:var(--muted);border:1px solid var(--border);}
+  .mitre{display:inline-block;background:rgba(188,140,255,.1);color:var(--purple);border:1px solid rgba(188,140,255,.3);border-radius:3px;font-size:10px;padding:1px 6px;margin:1px 2px;}
+  .tag{display:inline-block;background:rgba(48,54,61,.8);color:var(--muted);border-radius:3px;font-size:10px;padding:1px 5px;margin:1px;}
+  .ioc-list{font-family:monospace;font-size:11px;color:var(--cyan);list-style:none;}
+  .ioc-list li{padding:3px 0;border-bottom:1px solid var(--border);}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:20px;}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 14px;}
+  .stat .k{font-size:10px;text-transform:uppercase;color:var(--muted);}
+  .stat .v{font-size:14px;font-weight:600;margin-top:2px;}
+  .footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--border);text-align:center;font-size:11px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div>
+      <h1>PCAPForge — Network Forensics Report</h1>
+      <div style="margin-top:6px;color:var(--muted);font-size:13px;">synthetic_attack_demo.pcap</div>
+    </div>
+    <div class="meta">
+      <div>Generated: 2026-05-09 13:02 UTC</div>
+      <div>Analysis: 0.03s</div>
+      <div>PCAPForge v0.1.0</div>
+    </div>
+  </div>
+
+  <div class="cards">
+    <div class="card critical"><div class="num">1</div><div class="label">Critical</div></div>
+    <div class="card high"><div class="num">10</div><div class="label">High</div></div>
+    <div class="card medium"><div class="num">0</div><div class="label">Medium</div></div>
+    <div class="card neutral"><div class="num">11</div><div class="label">Findings</div></div>
+    <div class="card neutral"><div class="num">52</div><div class="label">Flows</div></div>
+    <div class="card neutral"><div class="num">6</div><div class="label">DNS Queries</div></div>
+    <div class="card neutral"><div class="num">1</div><div class="label">HTTP Reqs</div></div>
+    <div class="card neutral"><div class="num">17</div><div class="label">IOCs</div></div>
+  </div>
+
+  <h2>Capture Statistics</h2>
+  <div class="stat-grid">
+    <div class="stat"><div class="k">Packets</div><div class="v">113</div></div>
+    <div class="stat"><div class="k">Data</div><div class="v">75.3 KB</div></div>
+    <div class="stat"><div class="k">Duration</div><div class="v">627.9s</div></div>
+    <div class="stat"><div class="k">Unique Src IPs</div><div class="v">{&#39;192.168.1.200&#39;, &#39;203.0.113.99&#39;, &#39;192.168.1.50&#39;, &#39;192.168.1.100&#39;, &#39;203.0.113.5&#39;}</div></div>
+    <div class="stat"><div class="k">Unique Dst IPs</div><div class="v">{&#39;10.0.0.5&#39;, &#39;10.0.0.10&#39;, &#39;10.0.0.13&#39;, &#39;10.0.0.11&#39;, &#39;10.0.0.14&#39;, &#39;10.0.0.15&#39;, &#39;10.0.0.12&#39;, &#39;198.51.100.10&#39;, &#39;198.51.100.99&#39;, &#39;8.8.8.8&#39;, &#39;10.0.0.20&#39;}</div></div>
+    <div class="stat"><div class="k">Unique Ports</div><div class="v">{135, 27017, 139, 5900, 6667, 143, 8080, 9999, 21, 22, 23, 25, 1433, 53, 5432, 8888, 1337, 443, 3389, 445, 80, 4444, 5985, 31337, 3306, 6379, 110, 8443}</div></div>
+  </div>
+
+  
+
+  <h2>Forensic Findings (11)</h2>
+  <table>
+    <thead><tr>
+      <th>Severity</th><th>Category</th><th>Title</th><th>Description</th><th>MITRE</th><th>Tags</th>
+    </tr></thead>
+    <tbody>
+    
+    <tr>
+      <td><span class="sev sev-critical">critical</span></td>
+      <td style="color:var(--muted);">lateral_movement</td>
+      <td style="font-weight:600;font-size:12px;">Lateral Movement: 192.168.1.50 -&gt; 6 internal hosts</td>
+      <td style="font-size:12px;">192.168.1.50 connected to 6 internal hosts on admin/lateral-movement ports: {5985, 3389, 445}</td>
+      <td><span class="mitre">T1021</span><span class="mitre">T1021.002</span></td>
+      <td><span class="tag">lateral_movement</span><span class="tag">internal</span></td>
+    </tr>
+    
+    <tr>
+      <td><span class="sev sev-high">high</span></td>
+      <td style="color:var(--muted);">recon</td>
+      <td style="font-weight:600;font-size:12px;">Port Scan: 192.168.1.100 -&gt; 10.0.0.5</td>
+      <td style="font-size:12px;">192.168.1.100 probed 27 ports on 10.0.0.5</td>
+      <td><span class="mitre">T1046</span></td>
+      <td><span class="tag">port_scan</span><span class="tag">recon</span></td>
+    </tr>
+    
+    <tr>
+      <td><span class="sev sev-high">high</span></td>
+      <td style="color:var(--muted);">c2</td>
+      <td style="font-weight:600;font-size:12px;">Suspicious Port: 10.0.0.5:4444</td>
+      <td style="font-size:12px;">192.168.1.100 connected to 10.0.0.5:4444 (known malware port)</td>
+      <td><span class="mitre">T1571</span></td>
+      <td><span class="tag">suspicious_port</span><span class="tag">c2</span></td>
+    </tr>
+    
+    <tr>
+      <td><span class="sev sev-high">high</span></td>
+      <td style="color:var(--muted);">c2</td>
+      <td style="font-weight:600;font-size:12px;">Suspicious Port: 10.0.0.5:6667</td>
+      <td style="font-size:12px;">192.168.1.100 connected to 10.0.0.5:6667 (known malware port)</td>
+      <td><span class="mitre">T1571</span></td>
+      <td><span class="tag">suspicious_port</span><span class="tag">c2</span></td>
+    </tr>
+    
+    <tr>
+      <td><span class="sev sev-high">high</span></td>
+      <td style="color:var(--muted);">c2</td>
+      <td style="font-weight:600;font-size:12px;">Suspicious Port: 10.0.0.5:8888</td>
+      <td style="font-size:12px;">192.168.1.100 connected to 10.0.0.5:8888 (known malware port)</td>
+      <td><span class="mitre">T1571</span></td>
+      <td><span class="tag">suspicious_port</span><span class="tag">c2</span></td>
+    </tr>
+    
+    <tr>
+      <td><span class="sev sev-high">high</span></td>
+      <td style="color:var(--muted);">c2</td>
+      <td style="font-weight:600;font-size:12px;">Suspicious Port: 10.0.0.5:9999</td>
+      <td style="font-size:12px;">192.168.1.100 connected to 10.0.0.5:9999 (known malware port)</td>
+      <td><span class="mitre">T1571</span></td>
+      <td><span class="tag">suspicious_port</span><span class="tag">c2</span></td>
+    </tr>
+    
+    <tr>
+      <td><span class="sev sev-high">high</span></td>
+      <td style="color:var(--muted);">c2</td>
+      <td style="font-weight:600;font-size:12px;">Suspicious Port: 10.0.0.5:31337</td>
+      <td style="font-size:12px;">192.168.1.100 connected to 10.0.0.5:31337 (known malware port)</td>
+      <td><span class="mitre">T1571</span></td>
+      <td><span class="tag">suspicious_port</span><span class="tag">c2</span></td>
+    </tr>
+    
+    <tr>
+      <td><span class="sev sev-high">high</span></td>
+      <td style="color:var(--muted);">c2</td>
+      <td style="font-weight:600;font-size:12px;">Suspicious Port: 10.0.0.5:1337</td>
+      <td style="font-size:12px;">192.168.1.100 connected to 10.0.0.5:1337 (known malware port)</td>
+      <td><span class="mitre">T1571</span></td>
+      <td><span class="tag">suspicious_port</span><span class="tag">c2</span></td>
+    </tr>
+    
+    <tr>
+      <td><span class="sev sev-high">high</span></td>
+      <td style="color:var(--muted);">c2</td>
+      <td style="font-weight:600;font-size:12px;">Suspicious Port: 198.51.100.10:4444</td>
+      <td style="font-size:12px;">192.168.1.50 connected to 198.51.100.10:4444 (known malware port)</td>
+      <td><span class="mitre">T1571</span></td>
+      <td><span class="tag">suspicious_port</span><span class="tag">c2</span></td>
+    </tr>
+    
+    <tr>
+      <td><span class="sev sev-high">high</span></td>
+      <td style="color:var(--muted);">c2</td>
+      <td style="font-weight:600;font-size:12px;">DGA Activity from 192.168.1.50</td>
+      <td style="font-size:12px;">192.168.1.50 queried 5 algorithmically-generated domains</td>
+      <td><span class="mitre">T1568.002</span></td>
+      <td><span class="tag">dga</span><span class="tag">c2</span></td>
+    </tr>
+    
+    <tr>
+      <td><span class="sev sev-high">high</span></td>
+      <td style="color:var(--muted);">recon</td>
+      <td style="font-weight:600;font-size:12px;">Security Scanner: 203.0.113.5</td>
+      <td style="font-size:12px;">203.0.113.5 used known security scanner User-Agent(s): [&#39;sqlmap/1.7&#39;]</td>
+      <td><span class="mitre">T1595</span><span class="mitre">T1046</span></td>
+      <td><span class="tag">scanner</span><span class="tag">recon</span></td>
+    </tr>
+    
+    </tbody>
+  </table>
+
+  
+  <h2>Top Flows (52 total)</h2>
+  <table>
+    <thead><tr><th>Src IP</th><th>Dst IP</th><th>Port</th><th>Protocol</th><th>Packets</th><th>Bytes</th><th>Duration</th></tr></thead>
+    <tbody>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.200</td>
+      <td style="font-family:monospace;font-size:11px;">198.51.100.99</td>
+      <td style="color:var(--muted);">443</td>
+      <td><span class="tag">https</span></td>
+      <td style="color:var(--muted);">50</td>
+      <td style="color:var(--muted);">72700</td>
+      <td style="color:var(--muted);">4.9s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.50</td>
+      <td style="font-family:monospace;font-size:11px;">198.51.100.10</td>
+      <td style="color:var(--muted);">4444</td>
+      <td><span class="tag">tcp</span></td>
+      <td style="color:var(--muted);">8</td>
+      <td style="color:var(--muted);">1216</td>
+      <td style="color:var(--muted);">210.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.50</td>
+      <td style="font-family:monospace;font-size:11px;">8.8.8.8</td>
+      <td style="color:var(--muted);">53</td>
+      <td><span class="tag">dns</span></td>
+      <td style="color:var(--muted);">6</td>
+      <td style="color:var(--muted);">457</td>
+      <td style="color:var(--muted);">2.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">203.0.113.5</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.20</td>
+      <td style="color:var(--muted);">80</td>
+      <td><span class="tag">http</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">146</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">21</td>
+      <td><span class="tag">ftp</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">22</td>
+      <td><span class="tag">ssh</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">23</td>
+      <td><span class="tag">other</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">25</td>
+      <td><span class="tag">smtp</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">53</td>
+      <td><span class="tag">dns</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">80</td>
+      <td><span class="tag">http</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">110</td>
+      <td><span class="tag">other</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">135</td>
+      <td><span class="tag">tcp</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">139</td>
+      <td><span class="tag">tcp</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">143</td>
+      <td><span class="tag">other</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">443</td>
+      <td><span class="tag">https</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">445</td>
+      <td><span class="tag">smb</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">3389</td>
+      <td><span class="tag">rdp</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">8080</td>
+      <td><span class="tag">http</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">8443</td>
+      <td><span class="tag">https</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.100</td>
+      <td style="font-family:monospace;font-size:11px;">10.0.0.5</td>
+      <td style="color:var(--muted);">4444</td>
+      <td><span class="tag">tcp</span></td>
+      <td style="color:var(--muted);">1</td>
+      <td style="color:var(--muted);">54</td>
+      <td style="color:var(--muted);">0.0s</td>
+    </tr>
+    
+    </tbody>
+  </table>
+  
+
+  
+  <h2>Suspicious DNS Queries</h2>
+  <table>
+    <thead><tr><th>Src IP</th><th>Query</th><th>Type</th><th>Responses</th><th>Reason</th></tr></thead>
+    <tbody>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.50</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--orange);">xkqwjdnmsrtv.com</td>
+      <td style="color:var(--muted);">A</td>
+      <td style="font-family:monospace;font-size:11px;"></td>
+      <td style="font-size:11px;color:var(--muted);">DGA: entropy=3.58, consonant_ratio=1.00</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.50</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--orange);">plzmxwqrtbvc.net</td>
+      <td style="color:var(--muted);">A</td>
+      <td style="font-family:monospace;font-size:11px;"></td>
+      <td style="font-size:11px;color:var(--muted);">DGA: entropy=3.58, consonant_ratio=1.00</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.50</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--orange);">hgfjkqwxztvm.xyz</td>
+      <td style="color:var(--muted);">A</td>
+      <td style="font-family:monospace;font-size:11px;"></td>
+      <td style="font-size:11px;color:var(--muted);">Suspicious TLD: .xyz</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.50</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--orange);">qzxwvtbmnprs.top</td>
+      <td style="color:var(--muted);">A</td>
+      <td style="font-family:monospace;font-size:11px;"></td>
+      <td style="font-size:11px;color:var(--muted);">Suspicious TLD: .top</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.50</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--orange);">lkjhgfdsazxc.work</td>
+      <td style="color:var(--muted);">A</td>
+      <td style="font-family:monospace;font-size:11px;"></td>
+      <td style="font-size:11px;color:var(--muted);">Suspicious TLD: .work</td>
+    </tr>
+    
+    <tr>
+      <td style="font-family:monospace;font-size:11px;">192.168.1.50</td>
+      <td style="font-family:monospace;font-size:11px;color:var(--orange);">mnbvcxzlkjhg.xyz</td>
+      <td style="color:var(--muted);">A</td>
+      <td style="font-family:monospace;font-size:11px;"></td>
+      <td style="font-size:11px;color:var(--muted);">Suspicious TLD: .xyz</td>
+    </tr>
+    
+    </tbody>
+  </table>
+  
+
+  
+  
+    
+      
+        
+      
+    
+  
+    
+      
+        
+      
+    
+  
+    
+      
+        
+      
+    
+      
+        
+      
+    
+  
+    
+      
+    
+      
+        
+      
+    
+  
+    
+      
+    
+      
+        
+      
+    
+  
+    
+      
+    
+      
+        
+      
+    
+  
+    
+      
+    
+      
+        
+      
+    
+  
+    
+      
+    
+      
+        
+      
+    
+  
+    
+      
+        
+      
+    
+      
+        
+      
+    
+  
+    
+      
+        
+      
+    
+      
+        
+      
+    
+      
+        
+      
+    
+      
+        
+      
+    
+      
+        
+      
+    
+  
+    
+      
+        
+      
+    
+  
+  
+  <h2>IOC List (17)</h2>
+  <ul class="ioc-list">
+    <li>192.168.1.100</li><li>192.168.1.50</li><li>10.0.0.5</li><li>10.0.0.5:4444</li><li>10.0.0.5:6667</li><li>10.0.0.5:8888</li><li>10.0.0.5:9999</li><li>10.0.0.5:31337</li><li>10.0.0.5:1337</li><li>198.51.100.10</li><li>198.51.100.10:4444</li><li>xkqwjdnmsrtv.com</li><li>plzmxwqrtbvc.net</li><li>hgfjkqwxztvm.xyz</li><li>qzxwvtbmnprs.top</li><li>mnbvcxzlkjhg.xyz</li><li>203.0.113.5</li>
+  </ul>
+  
+
+  <div class="footer">
+    PCAPForge v0.1.0 &bull; Powered by Gemini AI &bull;
+    Copyright &copy; 2025 Desarrollado desde Las Brenas con amor por @jmsDev All rights reserved
+  </div>
+</div>
+</body>
+</html>

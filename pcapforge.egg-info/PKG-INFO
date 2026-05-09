@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: pcapforge
+Version: 0.1.0
+Summary: F-03 — PCAPForge: network forensics investigator with AI analysis
+Requires-Python: >=3.11
+Requires-Dist: typer>=0.12
+Requires-Dist: rich>=13.0
+Requires-Dist: jinja2>=3.1
+Requires-Dist: python-dotenv>=1.0
+Requires-Dist: google-generativeai>=0.7
+Requires-Dist: scapy>=2.5.0
+Requires-Dist: dpkt>=1.9.8
