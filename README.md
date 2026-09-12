@@ -1,249 +1,108 @@
-# 📡 PCAPForge — Network Forensics Investigator
+# PCAPForge
 
-<div align="center">
+**Investigador de forense de red (F-03) — reconstrucción de flujos, detección de escaneos/C2/DGA/SQLi sobre capturas PCAP, con narrativa de incidente por IA.**
 
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![PCAP](https://img.shields.io/badge/PCAP-dpkt-0077b6?style=for-the-badge)
-![Detectors](https://img.shields.io/badge/Detectors-3_Layers-6a0dad?style=for-the-badge)
-![Gemini](https://img.shields.io/badge/Gemini_AI-Free_Tier-4285F4?style=for-the-badge&logo=google&logoColor=white)
-![Portfolio](https://img.shields.io/badge/Portfolio-F--03_Forensics-8B0000?style=for-the-badge)
+## Qué hace
 
-**PCAP/PCAPNG analysis — flow reconstruction, DNS/HTTP/TLS parsing, attack detection, AI incident narrative**
+PCAPForge toma un archivo `.pcap`/`.pcapng` y lo parsea con **dpkt** (no con Scapy, ver nota abajo) reconstruyendo flujos TCP/UDP bidireccionales, consultas DNS, requests HTTP y sesiones TLS (extrayendo el SNI del ClientHello sin descifrar nada). Sobre esos datos corre tres motores de detección basados en heurísticas/patrones: uno de flujos (escaneo de puertos, beaconing C2 por regularidad de intervalos, movimiento lateral interno, puertos sospechosos, transferencias grandes salientes, fuerza bruta RDP), uno de DNS (dominios DGA por entropía/ratio de consonantes, túneles DNS, fast-flux, tormenta de NXDOMAIN, TLDs sospechosos) y uno de HTTP (SQLi, XSS, path traversal, webshells, User-Agents de scanners/frameworks de C2, rutas sensibles, fuerza bruta de login). Todos los hallazgos quedan taggeados con técnicas MITRE ATT&CK y, si hay una API key de Gemini configurada, se le pide a la IA que arme una narrativa del incidente, identifique el tipo de actor de amenaza y reconstruya la kill chain.
 
-*F-03 of 9 · Cybersecurity Portfolio by [@jmsDev](https://www.linkedin.com/in/jmsilva83)*
+No requiere conseguir una captura real para probarlo: el comando `demo` genera **en memoria** un `.pcap` sintético (escrito a mano con `struct.pack`, sin librerías de captura) con un escaneo de puertos, DNS a dominios DGA, beaconing HTTP tipo Meterpreter, un intento de SQLi, movimiento lateral por SMB/RDP y una transferencia grande — pensado justamente para demostrar todos los detectores sin depender de una muestra externa.
 
-</div>
+## Características
 
----
+- Reconstrucción de flujos TCP/UDP bidireccionales con contador de paquetes, bytes y duración.
+- Parseo de DNS (A/AAAA/MX/TXT/PTR/NS/CNAME/SOA) con IPs de respuesta.
+- Parseo de HTTP (método, host, path, User-Agent, status code) desde el payload TCP.
+- Extracción de SNI de TLS ClientHello (parseo manual del handshake, sin descifrar tráfico).
+- **Detector de flujos**: port scan (≥20 puertos distintos desde un mismo origen), beaconing C2 (≥5 conexiones periódicas con coeficiente de variación de intervalo < 0.3), movimiento lateral (≥3 hosts internos por puertos admin: 445/3389/5985/135/139/5900/23), puertos sospechosos (4444, 1337, 31337, 6667, etc.), transferencias > 50 MB a host externo, fuerza bruta RDP (≥10 intentos externos).
+- **Detector de DNS**: heurística DGA (entropía de Shannon + ratio de consonantes + ausencia de vocales sobre el label del dominio), túneles DNS (labels > 50 caracteres o > 6 niveles de subdominio), fast-flux (un dominio con ≥5 IPs de respuesta distintas), tormenta de NXDOMAIN, TLDs sospechosos (.tk, .xyz, .top, etc.).
+- **Detector de HTTP**: regex de SQLi/XSS/path traversal/webshell sobre la URL, User-Agents de scanners (nikto, sqlmap, nmap...) y de frameworks C2 (meterpreter, cobalt strike, sliver...), acceso a rutas sensibles (`/.env`, `/.git/`, `/wp-config.php`...), fuerza bruta de login por POSTs repetidos.
+- Narrativa de incidente vía Gemini (`gemini-1.5-flash`, opcional): reconstrucción del ataque, tipo de actor de amenaza, kill chain paso a paso y técnicas MITRE — si falla o no hay key, el análisis heurístico se mantiene intacto.
+- Reporte HTML (Jinja2) y export JSON.
+- Comandos puntuales `flows` (top flujos por bytes) y `dns` (consultas DNS, con `--suspicious` para filtrar solo las marcadas).
 
-## What it does
+**Nota real de dependencias**: `pyproject.toml` declara `scapy>=2.5.0`, pero **el código no lo usa en ningún lado** — todo el parseo de paquetes (`parsers/pcap_reader.py`) está hecho con `dpkt`. Es peso muerto (y una instalación bastante más pesada de lo necesario); no hace falta Npcap/WinPcap instalado en el sistema para que la herramienta funcione, porque no se abre ninguna interfaz de red ni se captura tráfico en vivo — todo el análisis es sobre archivos `.pcap` ya grabados.
 
-PCAPForge parses PCAP and PCAPNG captures using **dpkt** — reconstructing TCP/UDP flows, DNS queries, HTTP requests, and TLS sessions — then runs three detection modules (flow anomalies, DNS attacks, HTTP attacks) and feeds all findings to **Google Gemini** for incident narrative and kill chain reconstruction.
+## Requisitos
 
-```bash
-pcapforge analyze capture.pcap
-pcapforge flows capture.pcap --top 20
-pcapforge dns capture.pcap --suspicious
-pcapforge demo
-```
+- Python 3.11+ (probado en este entorno con 3.14.6).
+- Sin dependencias de sistema para el análisis de archivos — `dpkt` es Python puro. No hace falta Npcap/libpcap porque PCAPForge no captura tráfico en vivo, solo lee capturas ya existentes.
+- Variable de entorno opcional:
+  - `GEMINI_API_KEY` — habilita la narrativa de incidente con IA (Google Gemini, tier gratuito). Sin ella, el análisis heurístico funciona igual.
 
----
-
-## Features
-
-- **Full flow reconstruction** — bidirectional TCP/UDP flows with packet counts, bytes, duration
-- **DNS parsing** — A/AAAA/MX/TXT/PTR queries + response IP extraction
-- **HTTP parsing** — method, host, path, User-Agent, status code
-- **TLS SNI extraction** — Server Name Indication from ClientHello (without decryption)
-- **3 detection modules** — flow anomalies, DNS attacks, HTTP attacks — all pattern-matched
-- **AI incident narrative** — Gemini reconstructs attack timeline, identifies threat actor type, maps kill chain
-- **MITRE ATT&CK tagging** — every finding tagged with technique IDs
-- **HTML report** — findings table, top flows, suspicious DNS, IOC list, AI kill chain
-- **JSON export** — machine-readable for SIEM/pipeline integration
-
----
-
-## Detection Modules
-
-### Flow Detector
-Network-level attack pattern recognition:
-
-| Detection | Threshold | MITRE |
-|---|---|---|
-| **Port scan** | ≥ 20 unique ports from single src IP | T1046 |
-| **C2 beaconing** | ≥ 5 periodic connections, CV < 0.3 | T1071, T1571 |
-| **Lateral movement** | ≥ 3 internal hosts on admin ports (445, 3389, 135...) | T1021 |
-| **Suspicious ports** | Any connection to 4444, 31337, 1337, 6667... | T1571 |
-| **Large outbound transfer** | > 50 MB to external host | T1048, T1041 |
-| **RDP brute force** | ≥ 10 external connections to port 3389 | T1110.001 |
-
-### DNS Detector
-DNS-based attack and covert channel detection:
-
-| Detection | Method | MITRE |
-|---|---|---|
-| **DGA domains** | Shannon entropy + consonant ratio + vowel absence | T1568.002 |
-| **DNS tunneling** | Long labels (> 50 chars), deep nesting (> 6 levels), encoded TXT | T1071.004 |
-| **Fast-flux** | Single domain → ≥ 5 different IPs | T1568.001 |
-| **NXDOMAIN storm** | ≥ 20 failed lookups from same src (DGA iteration) | T1568.002 |
-| **Suspicious TLDs** | .tk, .ml, .ga, .xyz, .top, .pw and 10 more | T1071.004 |
-
-### HTTP Detector
-Web-layer attack detection:
-
-| Detection | Patterns | MITRE |
-|---|---|---|
-| **SQL injection** | 15+ SQLi patterns (UNION SELECT, OR 1=1, xp_cmdshell...) | T1190 |
-| **XSS** | Script tags, onerror, javascript:, document.cookie | T1059.007 |
-| **Path traversal** | `../`, `%2e%2e/`, `/etc/passwd`, `/proc/self` | T1083 |
-| **Webshell request** | cmd=, shell=, eval(, phpinfo, c99, r57 | T1505.003 |
-| **Scanner User-Agent** | nikto, sqlmap, nmap, gobuster, ZAP, Burp, nuclei... | T1595 |
-| **C2 User-Agent** | meterpreter, cobalt strike, empire, sliver strings | T1071.001 |
-| **Sensitive paths** | /.env, /.git/, /wp-config.php, /admin/, /phpmyadmin/ | T1083 |
-| **HTTP brute force** | ≥ 10 POSTs to login endpoints from same src | T1110.001 |
-
----
-
-## Installation
+## Instalación
 
 ```bash
-git clone https://github.com/jmsdev83/pcapforge
+git clone https://github.com/jmsD3v/pcapforge
 cd pcapforge
+
+python -m venv .venv
+source .venv/Scripts/activate      # Windows (Git Bash) — en cmd/PowerShell: .venv\Scripts\activate
 pip install -e .
 
 cp .env.example .env
-# Add GEMINI_API_KEY for AI narrative (optional)
+# Opcional: agregar GEMINI_API_KEY en .env para la narrativa de IA
 ```
 
----
+Instalación verificada en este entorno (Windows, Python 3.14.6, venv limpio): `pip install -e .` instala sin errores ni conflictos.
 
-## Usage
+## Uso
+
+No hace falta una captura real para probarlo — `demo` genera un `.pcap` sintético con patrones de ataque (port scan, DGA, C2 beaconing, SQLi, movimiento lateral, exfiltración) y corre el pipeline completo:
 
 ```bash
-# Full forensic analysis with AI
-pcapforge analyze capture.pcap
+# Demo con PCAP sintético de ataque, sin IA
+pcapforge demo --no-ai
 
-# Analysis without AI
-pcapforge analyze capture.pcap --no-ai
+# Análisis completo de una captura real
+pcapforge analyze captura.pcap
+pcapforge analyze captura.pcap --no-ai
+pcapforge analyze captura.pcap --output reporte.html
+pcapforge analyze captura.pcap --output hallazgos.json --format json
 
-# Export HTML report
-pcapforge analyze capture.pcap --output report.html
+# Top flujos por bytes
+pcapforge flows captura.pcap --top 20
 
-# Export JSON
-pcapforge analyze capture.pcap --output findings.json --format json
-
-# Show top 20 flows by bytes
-pcapforge flows capture.pcap --top 20
-
-# DNS analysis — show all queries
-pcapforge dns capture.pcap
-
-# DNS analysis — suspicious only
-pcapforge dns capture.pcap --suspicious
-
-# Demo with synthetic attack PCAP
-pcapforge demo
+# Consultas DNS (todas, o solo las marcadas sospechosas)
+pcapforge dns captura.pcap
+pcapforge dns captura.pcap --suspicious
 ```
 
----
+Comandos ejecutados de verdad durante la verificación (PCAP sintético generado por el propio proyecto, sin capturar tráfico real):
 
-## Architecture
-
-```
-pcapforge analyze <file>
-        │
-        ▼
-  PcapReader (dpkt)           ← parse all packets → flows, DNS, HTTP, TLS
-        │
-        ▼
-  Three detectors (parallel)
-  ┌─────┴─────────────────────────────────────────┐
-  │  FlowDetector    ← port scan, beaconing,       │
-  │                     lateral movement, exfil    │
-  │  DnsDetector     ← DGA, tunneling, fast-flux   │
-  │  HttpDetector    ← SQLi, XSS, scanners, C2 UA  │
-  └─────┬─────────────────────────────────────────┘
-        │
-        ▼
-  GeminiAnalyzer              ← NARRATIVE + THREAT_ACTOR + KILL_CHAIN + MITRE
-        │
-        ▼
-  Rich terminal + HTML report
+```bash
+$ pcapforge demo --no-ai
+Analysis complete:  1 critical  10 high  0 medium  11 total findings  (0.02s)
+Packets: 113  Flows: 52  DNS: 6  HTTP: 1  Unique src IPs: 5
 ```
 
----
+Detectó correctamente el movimiento lateral (192.168.1.50 → 6 hosts internos por SMB/RDP) como CRITICAL, el escaneo de 27 puertos, 6 puertos "suspicious" distintos (4444/6667/8888/9999/31337/1337), actividad DGA y el User-Agent de `sqlmap`. También:
 
-## AI Kill Chain Output
-
-```
-╔══════════════════════════════════════════════════════════════╗
-║  AI Incident Narrative                                       ║
-║  Attacker at 192.168.1.100 began with a systematic port     ║
-║  scan of 10.0.0.5, then established C2 communication via    ║
-║  HTTP beacons to 198.51.100.10:4444. Following credential   ║
-║  compromise, lateral movement to 6 internal hosts via SMB   ║
-║  and RDP was observed, culminating in large data transfer   ║
-║  to an external IP, suggesting exfiltration.                ║
-╚══════════════════════════════════════════════════════════════╝
-
-Threat Actor: APT — coordinated multi-stage attack with clear TTPs
-
-Kill Chain:
-  1. Reconnaissance — port scan of internal host
-  2. Initial Access — exploitation via open C2 port
-  3. Execution — HTTP beacon communication established
-  4. Lateral Movement — SMB/RDP to 6 internal hosts
-  5. Exfiltration — 70 MB transferred to external IP
-
-MITRE: T1046, T1071, T1021, T1021.002, T1048, T1041
+```bash
+$ pcapforge flows captura_guardada.pcap --top 5
+$ pcapforge dns captura_guardada.pcap --suspicious   # las 6 consultas DGA salieron marcadas
 ```
 
----
-
-## Supported PCAP Formats
-
-| Format | Notes |
-|---|---|
-| `.pcap` | Classic libpcap format |
-| `.pcapng` | Next-generation capture format |
-| Ethernet II | Standard Ethernet frames |
-| IPv4 | TCP, UDP, ICMP |
-| IPv6 | Supported via dpkt |
-
----
-
-## Project Structure
+## Estructura del proyecto
 
 ```
 pcapforge/
 ├── pcapforge/
-│   ├── parsers/
-│   │   └── pcap_reader.py       # dpkt PCAP parsing: flows, DNS, HTTP, TLS SNI
+│   ├── parsers/pcap_reader.py     # dpkt: flujos, DNS, HTTP, SNI de TLS
 │   ├── detectors/
-│   │   ├── flow_detector.py     # Port scan, beaconing, lateral movement, exfil
-│   │   ├── dns_detector.py      # DGA, tunneling, fast-flux, NXDOMAIN storm
-│   │   └── http_detector.py     # SQLi, XSS, traversal, scanner UAs, brute force
+│   │   ├── flow_detector.py       # Port scan, beaconing, movimiento lateral, exfil, RDP brute force
+│   │   ├── dns_detector.py        # DGA, túneles DNS, fast-flux, NXDOMAIN storm, TLDs sospechosos
+│   │   └── http_detector.py       # SQLi, XSS, traversal, webshell, scanner/C2 UA, brute force
 │   ├── core/
-│   │   ├── analyzer.py          # Main analysis pipeline
-│   │   └── ai_analyzer.py       # Gemini narrative + kill chain
-│   ├── types/
-│   │   └── network.py           # ConnectionFlow, DnsQuery, HttpRequest, ForensicFinding
-│   ├── report/
-│   │   ├── generator.py
-│   │   └── template.html
-│   └── cli/
-│       └── main.py
+│   │   ├── analyzer.py            # Pipeline principal de análisis
+│   │   └── ai_analyzer.py         # Gemini: narrativa + kill chain + MITRE
+│   ├── types/network.py           # ConnectionFlow, DnsQuery, HttpRequest, ForensicFinding, PcapSummary
+│   ├── report/generator.py + template.html  # Reporte HTML (Jinja2)
+│   └── cli/main.py                # CLI (Typer): analyze / flows / dns / demo
+├── .env.example
 └── pyproject.toml
 ```
 
----
+## Aviso legal
 
-## Environment Variables
-
-```env
-GEMINI_API_KEY=             # AI incident narrative + kill chain (optional)
-```
-
----
-
-## Portfolio
-
-| # | Category | Project | Status |
-|---|---|---|---|
-| P-01 | Offensive | ReconAI — Recon Orchestrator | ✅ |
-| P-02 | Offensive | WebHunter — OWASP Top 10 Scanner | ✅ |
-| P-03 | Offensive | PhishSim — Red Team Phishing | ✅ |
-| D-01 | Defensive | SOC-Lite — AI SIEM | ✅ |
-| D-02 | Defensive | ThreatFeed — CTI Aggregator | ✅ |
-| D-03 | Defensive | HoneyGrid — SSH/HTTP Honeypot | ✅ |
-| F-01 | Forensics | DFIR-Auto — Forensic Triage | ✅ |
-| F-02 | Forensics | MalwareScope — Malware Analyzer | ✅ |
-| F-03 | Forensics | **PCAPForge** ← you are here | ✅ |
-
----
-
-<div align="center">
-
-Copyright © 2025 Desarrollado desde Las Breñas con 💜 por [@jmsDev](https://www.linkedin.com/in/jmsilva83) · All rights reserved
-
-</div>
+Herramienta desarrollada con fines educativos y de portfolio. Analizar capturas de tráfico de redes o sistemas que no son propios, sin autorización explícita del responsable, puede constituir un delito e infringir normativa de privacidad de comunicaciones. Usala únicamente sobre capturas propias o para las que tengas consentimiento explícito. El autor no se hace responsable del uso indebido de esta herramienta.
