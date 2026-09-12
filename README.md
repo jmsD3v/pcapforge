@@ -4,7 +4,7 @@
 
 ## Qué hace
 
-PCAPForge toma un archivo `.pcap`/`.pcapng` y lo parsea con **dpkt** (no con Scapy, ver nota abajo) reconstruyendo flujos TCP/UDP bidireccionales, consultas DNS, requests HTTP y sesiones TLS (extrayendo el SNI del ClientHello sin descifrar nada). Sobre esos datos corre tres motores de detección basados en heurísticas/patrones: uno de flujos (escaneo de puertos, beaconing C2 por regularidad de intervalos, movimiento lateral interno, puertos sospechosos, transferencias grandes salientes, fuerza bruta RDP), uno de DNS (dominios DGA por entropía/ratio de consonantes, túneles DNS, fast-flux, tormenta de NXDOMAIN, TLDs sospechosos) y uno de HTTP (SQLi, XSS, path traversal, webshells, User-Agents de scanners/frameworks de C2, rutas sensibles, fuerza bruta de login). Todos los hallazgos quedan taggeados con técnicas MITRE ATT&CK y, si hay una API key de Gemini configurada, se le pide a la IA que arme una narrativa del incidente, identifique el tipo de actor de amenaza y reconstruya la kill chain.
+PCAPForge toma un archivo `.pcap`/`.pcapng` y lo parsea con **dpkt** (no con Scapy, ver nota abajo) reconstruyendo flujos TCP/UDP bidireccionales, consultas DNS, requests HTTP y sesiones TLS (extrayendo el SNI del ClientHello sin descifrar nada). Sobre esos datos corre tres motores de detección basados en heurísticas/patrones: uno de flujos (escaneo de puertos, beaconing C2 por regularidad de intervalos, movimiento lateral interno, puertos sospechosos, transferencias grandes salientes, fuerza bruta RDP), uno de DNS (dominios DGA por entropía/ratio de consonantes, túneles DNS, fast-flux, tormenta de NXDOMAIN, TLDs sospechosos) y uno de HTTP (SQLi, XSS, path traversal, webshells, User-Agents de scanners/frameworks de C2, rutas sensibles, fuerza bruta de login). Todos los hallazgos quedan taggeados con técnicas MITRE ATT&CK y, si hay una API key de IA configurada (Anthropic Claude, Google Gemini u OpenAI — se detecta automáticamente cuál), se le pide a la IA que arme una narrativa del incidente, identifique el tipo de actor de amenaza y reconstruya la kill chain.
 
 No requiere conseguir una captura real para probarlo: el comando `demo` genera **en memoria** un `.pcap` sintético (escrito a mano con `struct.pack`, sin librerías de captura) con un escaneo de puertos, DNS a dominios DGA, beaconing HTTP tipo Meterpreter, un intento de SQLi, movimiento lateral por SMB/RDP y una transferencia grande — pensado justamente para demostrar todos los detectores sin depender de una muestra externa.
 
@@ -17,7 +17,7 @@ No requiere conseguir una captura real para probarlo: el comando `demo` genera *
 - **Detector de flujos**: port scan (≥20 puertos distintos desde un mismo origen), beaconing C2 (≥5 conexiones periódicas con coeficiente de variación de intervalo < 0.3), movimiento lateral (≥3 hosts internos por puertos admin: 445/3389/5985/135/139/5900/23), puertos sospechosos (4444, 1337, 31337, 6667, etc.), transferencias > 50 MB a host externo, fuerza bruta RDP (≥10 intentos externos).
 - **Detector de DNS**: heurística DGA (entropía de Shannon + ratio de consonantes + ausencia de vocales sobre el label del dominio), túneles DNS (labels > 50 caracteres o > 6 niveles de subdominio), fast-flux (un dominio con ≥5 IPs de respuesta distintas), tormenta de NXDOMAIN, TLDs sospechosos (.tk, .xyz, .top, etc.).
 - **Detector de HTTP**: regex de SQLi/XSS/path traversal/webshell sobre la URL, User-Agents de scanners (nikto, sqlmap, nmap...) y de frameworks C2 (meterpreter, cobalt strike, sliver...), acceso a rutas sensibles (`/.env`, `/.git/`, `/wp-config.php`...), fuerza bruta de login por POSTs repetidos.
-- Narrativa de incidente vía Gemini (`gemini-1.5-flash`, opcional): reconstrucción del ataque, tipo de actor de amenaza, kill chain paso a paso y técnicas MITRE — si falla o no hay key, el análisis heurístico se mantiene intacto.
+- Narrativa de incidente por IA (opcional, multi-proveedor): reconstrucción del ataque, tipo de actor de amenaza, kill chain paso a paso y técnicas MITRE — si falla o no hay ninguna key configurada, el análisis heurístico se mantiene intacto.
 - Reporte HTML (Jinja2) y export JSON.
 - Comandos puntuales `flows` (top flujos por bytes) y `dns` (consultas DNS, con `--suspicious` para filtrar solo las marcadas).
 
@@ -27,8 +27,10 @@ No requiere conseguir una captura real para probarlo: el comando `demo` genera *
 
 - Python 3.11+ (probado en este entorno con 3.14.6).
 - Sin dependencias de sistema para el análisis de archivos — `dpkt` es Python puro. No hace falta Npcap/libpcap porque PCAPForge no captura tráfico en vivo, solo lee capturas ya existentes.
-- Variable de entorno opcional:
-  - `GEMINI_API_KEY` — habilita la narrativa de incidente con IA (Google Gemini, tier gratuito). Sin ella, el análisis heurístico funciona igual.
+- Variable de entorno opcional — **cualquiera de estas API keys** habilita la narrativa de incidente con IA (se detecta automáticamente cuál está configurada; sin ninguna, el análisis heurístico funciona igual):
+  - `ANTHROPIC_API_KEY` (Claude) — prioridad más alta si hay varias configuradas.
+  - `GEMINI_API_KEY` (Google Gemini, tiene tier gratuito) — segunda prioridad.
+  - `OPENAI_API_KEY` (OpenAI) — tercera prioridad.
 
 ## Instalación
 
@@ -41,10 +43,10 @@ source .venv/Scripts/activate      # Windows (Git Bash) — en cmd/PowerShell: .
 pip install -e .
 
 cp .env.example .env
-# Opcional: agregar GEMINI_API_KEY en .env para la narrativa de IA
+# Opcional: agregar UNA de ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY en .env
 ```
 
-Instalación verificada en este entorno (Windows, Python 3.14.6, venv limpio): `pip install -e .` instala sin errores ni conflictos.
+Instalación verificada en este entorno (Windows, Python 3.14.6, venv limpio): `pip install -e .` instala sin errores ni conflictos (incluyendo los SDKs `anthropic`, `google-generativeai` y `openai`).
 
 ## Uso
 
@@ -95,7 +97,7 @@ pcapforge/
 │   │   └── http_detector.py       # SQLi, XSS, traversal, webshell, scanner/C2 UA, brute force
 │   ├── core/
 │   │   ├── analyzer.py            # Pipeline principal de análisis
-│   │   └── ai_analyzer.py         # Gemini: narrativa + kill chain + MITRE
+│   │   └── ai_analyzer.py         # Narrativa + kill chain + MITRE — auto-detecta proveedor (Claude/Gemini/OpenAI)
 │   ├── types/network.py           # ConnectionFlow, DnsQuery, HttpRequest, ForensicFinding, PcapSummary
 │   ├── report/generator.py + template.html  # Reporte HTML (Jinja2)
 │   └── cli/main.py                # CLI (Typer): analyze / flows / dns / demo
