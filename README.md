@@ -1,5 +1,7 @@
 # PCAPForge
 
+![banner](docs/banner.svg)
+
 **Investigador de forense de red (F-03) — reconstrucción de flujos, detección de escaneos/C2/DGA/SQLi sobre capturas PCAP, con narrativa de incidente por IA.**
 
 ## Qué hace
